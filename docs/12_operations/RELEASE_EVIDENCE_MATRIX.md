@@ -1,0 +1,26 @@
+# Release Evidence Matrix
+
+Last updated: 2026-07-30
+
+This matrix records what has concrete verification evidence in the repository versus what remains blocked on device, model, legal, or external review work.
+
+| Area | Requirement focus | Current evidence | Status | Remaining gate |
+|---|---|---|---|---|
+| Repository capability policy | No cloud path, no analytics, no obvious embedded secrets, no app entitlements committed in source | `scripts/scan_forbidden_capabilities.sh`, `.github/workflows/security-and-build.yml`, `Tests/ManuscriptCoreTests/CapabilityScanTests.swift` | Verified in repo | Final built-app binary inspection and device network capture still required |
+| Native build baseline | Native app target compiles for Apple platform | `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` | Verified in simulator | Physical iPad signing, install, and runtime behavior still required |
+| Distribution package hygiene | Archive-ready iPad app bundle includes icon catalog, launch screen, and privacy manifest | `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO archive -archivePath /tmp/YoanTranslatorApp.xcarchive`; archive inspection of `Info.plist`, `PrivacyInfo.xcprivacy`, `Base.lproj/LaunchScreen.storyboardc`, and app icon artifacts | Verified in archive | Apple signing team, non-placeholder bundle identifier, App Store Connect record, and physical install/upload still required |
+| Core regression suite | Secure vault, import, export, archive, AI boundary, containment, and app-shell flows | `swift test` with `92 tests in 18 suites passed` | Verified in repo | UI, accessibility, and device-performance suites still required |
+| Vault encryption and restore | Encrypted storage, tamper rejection, rollback-safe restore | `Tests/ManuscriptCoreTests/ProjectVaultRepositoryTests.swift`, `Tests/ManuscriptCoreTests/EncryptedArchiveTests.swift` | Verified in repo | Keychain/Secure Enclave and cross-device restore evidence still required |
+| Lifecycle privacy controls | Snapshot obscuring and lock-state coordination | `Tests/ManuscriptCoreTests/AppLifecycleSecurityCoordinatorTests.swift`, `Tests/ManuscriptAppShellTests/AppShellEnvironmentTests.swift` | Verified in shared code | Real app-switcher behavior on iPad still required |
+| Plain-text, DOCX, and PDF import boundary | Fail-closed parsing, adversarial rejection, canonical segmentation | `Tests/ManuscriptCoreTests/PlainTextDocumentImporterTests.swift`, `Tests/ManuscriptCoreTests/DOCXDocumentImporterTests.swift`, `Tests/ManuscriptCoreTests/PDFDocumentImporterTests.swift` | Verified for current parser scope | DOCX formatting fidelity and real-sample PDF validation still required |
+| Revision integrity | Immutable source snapshot, accepted-change chaining, restore semantics | `Tests/ManuscriptCoreTests/SourceSnapshotAndRevisionTests.swift`, `Tests/ManuscriptCoreTests/ProjectWorkspaceServiceTests.swift` | Verified in repo | Richer review/editor UX validation still required |
+| Export and destructive-action controls | Scoped export confirmation, delete confirmation, staging cleanup | `Tests/ManuscriptCoreTests/ExportConfirmationValidatorTests.swift`, `Tests/ManuscriptCoreTests/LocalPublishingExportServiceTests.swift`, `Tests/ManuscriptCoreTests/DeleteConfirmationValidatorTests.swift` | Verified in repo | Native reauthentication prompt and Files handoff behavior still required |
+| Local AI boundary | Bounded context, proposal-only flow, conservative validation, glossary enforcement, and Apple-primary translation/proofreading execution | `Tests/ManuscriptCoreTests/ProposalValidatorTests.swift`, `Tests/ManuscriptCoreTests/OnDeviceModelRuntimeTests.swift`, `Tests/ManuscriptAppShellTests/AppShellEnvironmentTests.swift` | Verified for deterministic/runtime foundation and Apple-primary shell wiring | Real model quality, memory, thermal, and adversarial evaluation still required |
+| External model bundle trust | Signed manifest verification, license/provenance validation, asset sealing, revoked signer rejection | `Tests/ManuscriptCoreTests/LocalModelBundleInstallerTests.swift` | Verified in repo | Production signer lifecycle policy and distributable model review still required |
+| Incident containment | Local kill switches for AI roles and sensitive import/export/restore paths | `Sources/ManuscriptCore/Application/IncidentContainmentPolicy.swift`, `Tests/ManuscriptAppShellTests/AppShellEnvironmentTests.swift` | Verified in repo | Operational use on shipping builds still required |
+| Privacy, legal, and external review | Claims and release readiness | `docs/security/SECURITY_STATUS.md`, `docs/security/THREAT_MODEL.md`, `docs/operations/INCIDENT_RESPONSE_AND_RECOVERY.md` | Documentation current | Privacy notice finalization, legal model review, target-device evidence, and external security review remain open |
+
+## Current release conclusion
+
+- Repository implementation and automated verification are materially stronger than the initial scaffold and are internally consistent.
+- Release remains `BLOCKED` because the unresolved items are external or device-bound, not because the repository still lacks obvious local implementation work.
