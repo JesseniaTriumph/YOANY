@@ -1,5 +1,15 @@
 # Security Changelog
 
+## 2026-07-30 - Repository release snapshot tightening and app-shell support split
+
+- Review level: Level 2
+- Trigger: The repository had been pushed to GitHub, but its top-level presentation still understated the current verified build evidence and the largest UI shell file remained oversized enough to obscure coverage and maintenance work
+- New requirements: Repository-facing release notes must accurately state verified local evidence and remaining distribution blockers, while app-shell support scaffolding should be split from the main shell file without altering trust boundaries or runtime behavior
+- Controls implemented: extracted `AppShellEnvironment` and related support/view-data types into `Sources/ManuscriptAppShell/AppShellSupport.swift`, added `docs/12_operations/GITHUB_REPOSITORY_METADATA.md` with a concrete GitHub description/topics/release snapshot, and tightened `README.md` to distinguish verified build/archive evidence from unresolved release blockers
+- Tests run: `scripts/scan_forbidden_capabilities.sh .` -> `passed`; `swift test --enable-code-coverage` -> `101 tests in 19 suites passed`; `xcrun llvm-cov report ...` -> package line coverage `63.90%`; `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` -> `BUILD SUCCEEDED`; `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO archive -archivePath /tmp/YoanTranslatorApp.xcarchive` -> `ARCHIVE SUCCEEDED`; archive inspection confirmed bundled `PrivacyInfo.xcprivacy`, `Base.lproj/LaunchScreen.storyboardc`, and iPad icon metadata in `Info.plist`
+- Remaining risks: physical-device privacy/runtime evidence, network-capture proof, quality validation, and GitHub remote metadata updates remain incomplete; direct remote repository settings changes still require valid GitHub CLI authentication
+- Release decision: BLOCKED
+
 ## 2026-07-30 - Security-helper and domain coverage expansion
 
 - Review level: Level 2

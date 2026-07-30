@@ -2,6 +2,8 @@
 
 This repository contains the authoritative product/security documentation package plus an actively building native Swift implementation for the private on-device iPad manuscript workflow.
 
+Repository snapshot: native iPadOS-focused Swift codebase with a verified local test/build baseline, unsigned archive packaging evidence, and explicit release blockers still tracked in-repo.
+
 - Shared Swift modules for secure vault, document import, revision handling, export, backup/restore, and local AI runtime boundaries
 - SwiftUI app-shell target that builds for iOS Simulator and archives for unsigned iPad distribution packaging
 - Metadata-only audit events and fail-closed lifecycle controls
@@ -20,6 +22,23 @@ This repository contains the authoritative product/security documentation packag
 - Release decision: BLOCKED
 - Primary privacy promise: manuscript processing must remain on-device with no online path and no cloud fallback
 - Translation architecture target: any approved supported language should be translatable to any other approved supported language; rollout starts with French proofreading/review and French to English, then French to Spanish, French to Portuguese, and French to Arabic
+
+## Verified snapshot
+
+- Package tests: `swift test --enable-code-coverage` -> `101 tests in 19 suites passed`
+- Package line coverage: `63.90%`
+- Simulator build: `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` -> `BUILD SUCCEEDED`
+- Unsigned iPad archive: `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO archive -archivePath /tmp/YoanTranslatorApp.xcarchive` -> `ARCHIVE SUCCEEDED`
+- Bundle inspection: `PrivacyInfo.xcprivacy`, launch-screen resources, and app icon metadata confirmed inside the archive
+
+## Distribution blockers
+
+- Physical iPad install/runtime validation has not been completed
+- Airplane-mode and packet-capture privacy evidence is still missing
+- Real `LocalAuthentication` / Keychain / Secure Enclave behavior is still unverified
+- DOCX/PDF fidelity and page-preserving review quality on real samples are still incomplete
+- Target-device proofreading and translation quality evidence is still incomplete
+- Signing, final bundle identifier, and App Store Connect distribution setup remain outstanding
 
 ## What is implemented
 
@@ -64,8 +83,9 @@ This repository contains the authoritative product/security documentation packag
 10. `docs/10_testing/MASTER_TEST_PLAN.md` - verification structure
 11. `docs/11_implementation/DEFINITION_OF_DONE.md` - completion gate
 12. `docs/12_operations/OPERATIONAL_RUNBOOK.md` - local operations and incident handling
-13. Legacy focused docs under `docs/product`, `docs/architecture`, `docs/security`, `docs/implementation`, `docs/qa`, and `docs/operations`
-14. `DECISION_LOG.md` - unresolved product and technical decisions
+13. `docs/12_operations/GITHUB_REPOSITORY_METADATA.md` - suggested GitHub description/topics and release snapshot text
+14. Legacy focused docs under `docs/product`, `docs/architecture`, `docs/security`, `docs/implementation`, `docs/qa`, and `docs/operations`
+15. `DECISION_LOG.md` - unresolved product and technical decisions
 
 ## Governing principle
 
