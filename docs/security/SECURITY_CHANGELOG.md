@@ -1,5 +1,15 @@
 # Security Changelog
 
+## 2026-08-01 - Private tester sideload handoff documentation
+
+- Review level: Level 2
+- Trigger: The immediate distribution need shifted away from App Store / TestFlight toward a no-cost private iPad install, and the repository lacked a controlled tester-handoff procedure that distinguished Xcode sideload readiness from actual release readiness
+- New requirements: The repository must document a deterministic Personal Team sideload path, required device prerequisites, on-device smoke checks, and retained evidence so that private testing does not overstate product readiness or bypass known privacy/security blockers
+- Controls implemented: added `docs/12_operations/PERSONAL_TEAM_SIDELOAD_GUIDE.md`, added `docs/12_operations/TESTER_DEVICE_ACCEPTANCE_CHECKLIST.md`, expanded `docs/12_operations/RELEASE_CHECKLIST.md` with physical-device handoff gates, and updated the sequential build plan to make Personal Team sideloading the current no-cost tester-distribution track
+- Tests run: pending in this change entry until post-edit verification completes
+- Remaining risks: this change documents the sideload path but does not itself provide real-device privacy, quality, or network-isolation evidence; overall release readiness remains blocked until those device tests are actually run
+- Release decision: BLOCKED
+
 ## 2026-07-30 - Repository release snapshot tightening and app-shell support split
 
 - Review level: Level 2

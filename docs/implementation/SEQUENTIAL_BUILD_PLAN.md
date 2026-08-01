@@ -2,7 +2,7 @@
 
 This is the exact recommended construction order. A later step must not be used to compensate for a missing earlier security boundary.
 
-## Current snapshot - 2026-07-30
+## Current snapshot - 2026-08-01
 
 - Release state: `BLOCKED`
 - Security review level: `Level 2`
@@ -10,6 +10,7 @@ This is the exact recommended construction order. A later step must not be used 
 - Remaining release-critical work: DOCX formatting fidelity, deeper PDF validation with real-sample review, model quality evaluation, page-preserving translation review, richer editor/review UI, device privacy/network evidence, and real-device recovery/export validation
 - Newly closed oversight: external model imports now require signed directory bundles whose complete installed asset inventory is declared and digest-validated before persistence
 - Active caution: do not treat the current starter rules model as evidence of publication-quality proofreading or translation capability
+- Private tester path: Xcode Personal Team sideloading is now the intended no-cost handoff route until paid Apple distribution is justified
 
 ## Foundation
 
@@ -99,3 +100,4 @@ This is the exact recommended construction order. A later step must not be used 
 60. `Done` Finalize privacy notice, threat model, incident playbooks, and evidence matrix.
 61. `Current decision: BLOCKED` Issue `READY`, `CONDITIONAL`, or `BLOCKED` based on evidence.
 62. `Gate` Release only if all critical/high requirements are verified on target devices with retained evidence.
+63. `Done for private test prep` Document a no-cost Personal Team sideload path with explicit install prerequisites, device acceptance checks, and retained-evidence requirements.
