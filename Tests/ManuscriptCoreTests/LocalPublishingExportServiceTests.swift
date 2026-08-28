@@ -112,6 +112,40 @@ struct LocalPublishingExportServiceTests {
         )
 
         let intent = ExportIntent(
+            kind: .encryptedArchive,
+            projectID: project.id,
+            revisionID: nil,
+            destinationLabel: "On My iPad"
+        )
+        let validator = ExportConfirmationValidator(maxAge: 60)
+        let confirmation = validator.issue(
+            kind: intent.kind,
+            projectID: intent.projectID,
+            revisionID: intent.revisionID,
+            destinationLabel: intent.destinationLabel
+        )
+        let service = try LocalPublishingExportService(
+            repository: fixture.repository,
+            confirmationValidator: validator,
+            stagingRootURL: fixture.rootURL.appendingPathComponent("exports", isDirectory: true)
+        )
+
+        await #expect(throws: LocalPublishingExportError.unsupportedExportKind(.encryptedArchive)) {
+            _ = try await service.materializeExport(intent: intent, confirmation: confirmation)
+        }
+    }
+
+    @Test func materializesDOCXExportThatRoundTripsThroughImporter() async throws {
+        let fixture = try RepositoryFixture()
+        let project = try await fixture.repository.createProject(title: "DOCX Export")
+        _ = try await fixture.repository.unlockProject(
+            projectID: project.id,
+            authenticator: LocalOnlyAuthenticator(sessionDuration: 120)
+        )
+        let document = try PlainTextDocumentImporter().import(text: "Titre:\n\nBonjour le monde.")
+        _ = try await fixture.repository.importSourceDocument(projectID: project.id, document: document)
+
+        let intent = ExportIntent(
             kind: .publishingDOCX,
             projectID: project.id,
             revisionID: nil,
@@ -130,10 +164,88 @@ struct LocalPublishingExportServiceTests {
             stagingRootURL: fixture.rootURL.appendingPathComponent("exports", isDirectory: true)
         )
 
-        await #expect(throws: LocalPublishingExportError.unsupportedExportKind(.publishingDOCX)) {
-            _ = try await service.materializeExport(intent: intent, confirmation: confirmation)
-        }
+        let artifact = try await service.materializeExport(intent: intent, confirmation: confirmation)
+        let exportedData = try Data(contentsOf: artifact.fileURL)
+        let roundTripped = try DOCXDocumentImporter().import(data: exportedData)
+
+        #expect(artifact.fileURL.pathExtension == "docx")
+        #expect(roundTripped.format == .docx)
+        #expect(roundTripped.pages.first?.segments.map(\.text) == ["Titre:", "Bonjour le monde."])
     }
+
+    #if canImport(PDFKit) && canImport(AppKit)
+    @Test func materializesPDFExportThatRoundTripsThroughImporter() async throws {
+        let fixture = try RepositoryFixture()
+        let project = try await fixture.repository.createProject(title: "PDF Export")
+        _ = try await fixture.repository.unlockProject(
+            projectID: project.id,
+            authenticator: LocalOnlyAuthenticator(sessionDuration: 120)
+        )
+        let document = CanonicalDocument(
+            format: .plainText,
+            contentHash: "fixture",
+            pages: [
+                DocumentPage(
+                    pageIndex: 0,
+                    sourceLabel: "Page 1",
+                    segments: [
+                        DocumentSegment(
+                            pageID: PageID.make(),
+                            orderIndex: 0,
+                            kind: .paragraph,
+                            text: "Bonjour le monde.",
+                            sourceRange: SourceRangeReference(pageIndex: 0, segmentIndex: 0)
+                        )
+                    ]
+                ),
+                DocumentPage(
+                    pageIndex: 1,
+                    sourceLabel: "Page 2",
+                    segments: [
+                        DocumentSegment(
+                            pageID: PageID.make(),
+                            orderIndex: 0,
+                            kind: .paragraph,
+                            text: "Deuxieme page.",
+                            sourceRange: SourceRangeReference(pageIndex: 1, segmentIndex: 0)
+                        )
+                    ]
+                ),
+            ],
+            warnings: []
+        )
+        _ = try await fixture.repository.importSourceDocument(projectID: project.id, document: document)
+
+        let intent = ExportIntent(
+            kind: .publishingPDF,
+            projectID: project.id,
+            revisionID: nil,
+            destinationLabel: "On My iPad"
+        )
+        let validator = ExportConfirmationValidator(maxAge: 60)
+        let confirmation = validator.issue(
+            kind: intent.kind,
+            projectID: intent.projectID,
+            revisionID: intent.revisionID,
+            destinationLabel: intent.destinationLabel
+        )
+        let service = try LocalPublishingExportService(
+            repository: fixture.repository,
+            confirmationValidator: validator,
+            stagingRootURL: fixture.rootURL.appendingPathComponent("exports", isDirectory: true)
+        )
+
+        let artifact = try await service.materializeExport(intent: intent, confirmation: confirmation)
+        let exportedData = try Data(contentsOf: artifact.fileURL)
+        let roundTripped = try PDFDocumentImporter().import(data: exportedData)
+
+        #expect(artifact.fileURL.pathExtension == "pdf")
+        #expect(roundTripped.format == .pdf)
+        #expect(roundTripped.pages.count == 2)
+        #expect(roundTripped.pages[0].segments.first?.text.contains("Bonjour le monde.") == true)
+        #expect(roundTripped.pages[1].segments.first?.text.contains("Deuxieme page.") == true)
+    }
+    #endif
 
     @Test func rejectsMismatchedDestinationConfirmation() async throws {
         let fixture = try RepositoryFixture()

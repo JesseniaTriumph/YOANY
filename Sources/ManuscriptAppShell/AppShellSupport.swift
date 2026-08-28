@@ -177,4 +177,45 @@ enum DraftImportMode: String, CaseIterable, Identifiable {
         }
     }
 }
+
+enum PublishingExportFormat: String, CaseIterable, Identifiable {
+    case plainText
+    case docx
+    case pdf
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .plainText:
+            "Plain Text"
+        case .docx:
+            "DOCX"
+        case .pdf:
+            "PDF"
+        }
+    }
+
+    var exportKind: ExportKind {
+        switch self {
+        case .plainText:
+            .publishingPlainText
+        case .docx:
+            .publishingDOCX
+        case .pdf:
+            .publishingPDF
+        }
+    }
+
+    var shareLabel: String {
+        switch self {
+        case .plainText:
+            "Share Plain Text Export"
+        case .docx:
+            "Share DOCX Export"
+        case .pdf:
+            "Share PDF Export"
+        }
+    }
+}
 #endif

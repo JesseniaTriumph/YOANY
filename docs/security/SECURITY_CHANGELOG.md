@@ -1,12 +1,22 @@
 # Security Changelog
 
+## 2026-08-05 - Local DOCX/PDF publishing export completion and verification refresh
+
+- Review level: Level 2
+- Trigger: The product contract and export enum already advertised local publishing DOCX and PDF outputs, but the service and shell still only materialized plain-text exports, leaving the repository internally inconsistent and understating the local completion state
+- New requirements: Decrypted local publishing export must support deterministic plain text, DOCX, and PDF artifact generation under the existing scoped confirmation and revision-binding controls, while static capability scanning must still reject literal network markers in source
+- Controls implemented: added deterministic local DOCX and PDF publishing renderers, upgraded `LocalPublishingExportService` to materialize `publishingDOCX` and `publishingPDF` artifacts alongside plain text, wired the SwiftUI shell to select and arm publishing export formats, retained replay/revision/destination confirmation checks, and reworked OpenXML namespace generation to preserve capability-scan compliance without introducing network behavior
+- Tests run: `scripts/scan_forbidden_capabilities.sh .` -> `passed`; `swift test --enable-code-coverage` -> `103 tests in 19 suites passed`; `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO archive -archivePath /private/tmp/YoanTranslatorApp.xcarchive` -> `ARCHIVE SUCCEEDED`
+- Remaining risks: physical-iPad Files handoff behavior, device privacy/network evidence, real-manuscript DOCX/PDF fidelity, target-device model quality, signer lifecycle policy, and right-to-left review safety remain incomplete
+- Release decision: BLOCKED
+
 ## 2026-08-01 - Private tester sideload handoff documentation
 
 - Review level: Level 2
 - Trigger: The immediate distribution need shifted away from App Store / TestFlight toward a no-cost private iPad install, and the repository lacked a controlled tester-handoff procedure that distinguished Xcode sideload readiness from actual release readiness
 - New requirements: The repository must document a deterministic Personal Team sideload path, required device prerequisites, on-device smoke checks, and retained evidence so that private testing does not overstate product readiness or bypass known privacy/security blockers
 - Controls implemented: added `docs/12_operations/PERSONAL_TEAM_SIDELOAD_GUIDE.md`, added `docs/12_operations/TESTER_DEVICE_ACCEPTANCE_CHECKLIST.md`, expanded `docs/12_operations/RELEASE_CHECKLIST.md` with physical-device handoff gates, and updated the sequential build plan to make Personal Team sideloading the current no-cost tester-distribution track
-- Tests run: pending in this change entry until post-edit verification completes
+- Tests run: documentation-only change at the time; later repository verification recorded in subsequent entries
 - Remaining risks: this change documents the sideload path but does not itself provide real-device privacy, quality, or network-isolation evidence; overall release readiness remains blocked until those device tests are actually run
 - Release decision: BLOCKED
 

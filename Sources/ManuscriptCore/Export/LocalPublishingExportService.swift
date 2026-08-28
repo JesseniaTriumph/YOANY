@@ -30,6 +30,8 @@ public actor LocalPublishingExportService {
     private let repository: ProjectVaultRepository
     private let confirmationValidator: ExportConfirmationValidator
     private let textExporter: LocalPublishingTextExporter
+    private let docxExporter: LocalPublishingDOCXExporter
+    private let pdfExporter: LocalPublishingPDFExporter
     private let stagingRootURL: URL
     private var usedConfirmationIDs: Set<ExportConfirmationID> = []
 
@@ -37,11 +39,15 @@ public actor LocalPublishingExportService {
         repository: ProjectVaultRepository,
         confirmationValidator: ExportConfirmationValidator = ExportConfirmationValidator(),
         textExporter: LocalPublishingTextExporter = LocalPublishingTextExporter(),
+        docxExporter: LocalPublishingDOCXExporter = LocalPublishingDOCXExporter(),
+        pdfExporter: LocalPublishingPDFExporter = LocalPublishingPDFExporter(),
         stagingRootURL: URL
     ) throws {
         self.repository = repository
         self.confirmationValidator = confirmationValidator
         self.textExporter = textExporter
+        self.docxExporter = docxExporter
+        self.pdfExporter = pdfExporter
         self.stagingRootURL = stagingRootURL
 
         try FileManager.default.createDirectory(
@@ -68,10 +74,6 @@ public actor LocalPublishingExportService {
             throw LocalPublishingExportError.replayedConfirmation(confirmation.id)
         }
 
-        guard intent.kind == .publishingPlainText else {
-            throw LocalPublishingExportError.unsupportedExportKind(intent.kind)
-        }
-
         let currentRevisionID = try await repository.revisionEvents(projectID: intent.projectID).last?.id
         guard currentRevisionID == intent.revisionID else {
             throw LocalPublishingExportError.revisionStateMismatch(
@@ -93,9 +95,21 @@ public actor LocalPublishingExportService {
             attributes: nil
         )
 
-        let outputURL = exportDirectory.appendingPathComponent("manuscript.txt")
-        let exportText = textExporter.render(document: document)
-        try Data(exportText.utf8).write(to: outputURL, options: .atomic)
+        let artifact: (filename: String, data: Data)
+        switch intent.kind {
+        case .publishingPlainText:
+            let exportText = textExporter.render(document: document)
+            artifact = ("manuscript.txt", Data(exportText.utf8))
+        case .publishingDOCX:
+            artifact = ("manuscript.docx", try docxExporter.render(document: document))
+        case .publishingPDF:
+            artifact = ("manuscript.pdf", try pdfExporter.render(document: document))
+        case .encryptedArchive:
+            throw LocalPublishingExportError.unsupportedExportKind(intent.kind)
+        }
+
+        let outputURL = exportDirectory.appendingPathComponent(artifact.filename)
+        try artifact.data.write(to: outputURL, options: .atomic)
         usedConfirmationIDs.insert(confirmation.id)
 
         return LocalPublishingExportArtifact(

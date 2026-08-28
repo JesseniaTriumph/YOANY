@@ -21,6 +21,7 @@ final class AppShellViewModel: ObservableObject {
         "Create a project, unlock it locally, then import manuscript pages for review."
     @Published private(set) var importedSourceFormat: SourceDocumentFormat?
     @Published private(set) var lastExportURL: URL?
+    @Published private(set) var lastPublishingExportFormat: PublishingExportFormat?
     @Published private(set) var lastEncryptedArchiveURL: URL?
     @Published private(set) var bootError: String?
     @Published private(set) var activeRevisionID: RevisionID?
@@ -28,7 +29,7 @@ final class AppShellViewModel: ObservableObject {
     @Published private(set) var activeModelBackend: String?
     @Published private(set) var activeModelLicense: String?
     @Published private(set) var activeModelProvenance: String?
-    @Published private(set) var isPlainTextExportArmed = false
+    @Published private(set) var isPublishingExportArmed = false
     @Published private(set) var lifecycleSecurityState = AppLifecycleSecurityState(
         scenePhase: .active,
         shouldObscureSnapshots: false,
@@ -45,6 +46,11 @@ final class AppShellViewModel: ObservableObject {
     @Published var isModelImporterPresented = false
     @Published var translationSourceLanguage: SupportedLanguage = .french
     @Published var translationTargetLanguage: SupportedLanguage = .english
+    @Published var selectedPublishingExportFormat: PublishingExportFormat = .plainText
+
+    var isPlainTextExportArmed: Bool {
+        isPublishingExportArmed && selectedPublishingExportFormat == .plainText
+    }
 
     private let environment: AppShellEnvironment?
     private let lifecycleCoordinator: AppLifecycleSecurityCoordinator
@@ -232,8 +238,9 @@ final class AppShellViewModel: ObservableObject {
         activeRevisionID = nil
         deleteConfirmation = nil
         lastExportURL = nil
+        lastPublishingExportFormat = nil
         lastEncryptedArchiveURL = nil
-        isPlainTextExportArmed = false
+        isPublishingExportArmed = false
         statusMessage = "Locked local project \(projectID.rawValue)."
         await refreshLifecycleSecurityState()
         await refreshProjects()
@@ -749,7 +756,7 @@ final class AppShellViewModel: ObservableObject {
         }
     }
 
-    func exportPlainText() async {
+    func exportPublishingFormat() async {
         guard let environment, let projectID = unlockedProjectID else {
             statusMessage = "Unlock a project before exporting."
             return
@@ -758,21 +765,21 @@ final class AppShellViewModel: ObservableObject {
             statusMessage = containmentMessage(for: .decryptedExport)
             return
         }
-        guard isPlainTextExportArmed else {
-            statusMessage = "Arm plain-text export first. Decrypted exports leave the encrypted vault."
+        guard isPublishingExportArmed else {
+            statusMessage = "Arm publishing export first. Decrypted exports leave the encrypted vault."
             return
         }
 
         do {
             let revisionID = try await environment.workspaceService.latestRevisionID(projectID: projectID)
             let intent = ExportIntent(
-                kind: .publishingPlainText,
+                kind: selectedPublishingExportFormat.exportKind,
                 projectID: projectID,
                 revisionID: revisionID,
                 destinationLabel: "Local Files"
             )
             let confirmation = ExportConfirmation(
-                exportKind: .publishingPlainText,
+                exportKind: selectedPublishingExportFormat.exportKind,
                 projectID: projectID,
                 revisionID: revisionID,
                 destinationLabel: "Local Files"
@@ -782,22 +789,33 @@ final class AppShellViewModel: ObservableObject {
                 confirmation: confirmation
             )
             lastExportURL = artifact.fileURL
-            isPlainTextExportArmed = false
+            lastPublishingExportFormat = selectedPublishingExportFormat
+            isPublishingExportArmed = false
             statusMessage = "Prepared local export at \(artifact.fileURL.path)."
         } catch {
             statusMessage = "Export failed: \(error.localizedDescription)"
         }
     }
 
-    func armPlainTextExport() {
+    func armPublishingExport() {
         guard unlockedProjectID != nil else {
-            statusMessage = "Unlock a project before arming plain-text export."
+            statusMessage = "Unlock a project before arming publishing export."
             return
         }
 
-        isPlainTextExportArmed = true
+        isPublishingExportArmed = true
         statusMessage =
-            "Plain-text export is armed for a local handoff. Confirm only when you intend to move decrypted text outside the encrypted vault."
+            "\(selectedPublishingExportFormat.title) export is armed for a local handoff. Confirm only when you intend to move decrypted text outside the encrypted vault."
+    }
+
+    func exportPlainText() async {
+        selectedPublishingExportFormat = .plainText
+        await exportPublishingFormat()
+    }
+
+    func armPlainTextExport() {
+        selectedPublishingExportFormat = .plainText
+        armPublishingExport()
     }
 
     func exportEncryptedArchive() async {
@@ -907,7 +925,8 @@ final class AppShellViewModel: ObservableObject {
             self.deleteConfirmation = nil
             selectedProjectID = nil
             lastExportURL = nil
-            isPlainTextExportArmed = false
+            lastPublishingExportFormat = nil
+            isPublishingExportArmed = false
             if lastEncryptedArchiveURL?.deletingPathExtension().lastPathComponent == projectID.rawValue {
                 lastEncryptedArchiveURL = nil
             }
@@ -946,8 +965,9 @@ final class AppShellViewModel: ObservableObject {
         activeRevisionID = nil
         deleteConfirmation = nil
         lastExportURL = nil
+        lastPublishingExportFormat = nil
         lastEncryptedArchiveURL = nil
-        isPlainTextExportArmed = false
+        isPublishingExportArmed = false
         statusMessage = "Locked local project \(projectID.rawValue)."
         await refreshProjects()
     }
@@ -1204,30 +1224,39 @@ public struct AppShellView: View {
                             }
                         }
 
-                        HStack {
-                            Button("Arm Plain-Text Export", action: armPlainTextExport)
-                            .buttonStyle(.bordered)
-
-                            Button("Export Plain Text", action: exportPlainText)
-                            .buttonStyle(.bordered)
-
-                            Button("Export Encrypted Backup", action: exportEncryptedBackup)
-                            .buttonStyle(.bordered)
-
-                            Button("Restore Backup File", action: restoreBackupFile)
-                            .buttonStyle(.bordered)
-
-                            Button("Restore Last Backup", action: restoreLastBackup)
-                            .buttonStyle(.bordered)
-
-                            Button("Arm Delete") {
-                                viewModel.armDeleteSelectedProject()
+                        VStack(alignment: .leading, spacing: 8) {
+                            Picker("Publishing Format", selection: $viewModel.selectedPublishingExportFormat) {
+                                ForEach(PublishingExportFormat.allCases) { format in
+                                    Text(format.title).tag(format)
+                                }
                             }
-                            .buttonStyle(.bordered)
+                            .pickerStyle(.segmented)
 
-                            Button("Delete Again", action: deleteSelectedProject)
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                            HStack {
+                                Button("Arm Publishing Export", action: armPublishingExport)
+                                .buttonStyle(.bordered)
+
+                                Button("Export Publishing File", action: exportPublishingFormat)
+                                .buttonStyle(.bordered)
+
+                                Button("Export Encrypted Backup", action: exportEncryptedBackup)
+                                .buttonStyle(.bordered)
+
+                                Button("Restore Backup File", action: restoreBackupFile)
+                                .buttonStyle(.bordered)
+
+                                Button("Restore Last Backup", action: restoreLastBackup)
+                                .buttonStyle(.bordered)
+
+                                Button("Arm Delete") {
+                                    viewModel.armDeleteSelectedProject()
+                                }
+                                .buttonStyle(.bordered)
+
+                                Button("Delete Again", action: deleteSelectedProject)
+                                .buttonStyle(.borderedProminent)
+                                .tint(.red)
+                            }
                         }
                     }
 
@@ -1245,8 +1274,8 @@ public struct AppShellView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        if viewModel.isPlainTextExportArmed {
-                            Text("Plain-text export armed for local handoff only.")
+                        if viewModel.isPublishingExportArmed {
+                            Text("\(viewModel.selectedPublishingExportFormat.title) export armed for local handoff only.")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         }
@@ -1257,7 +1286,10 @@ public struct AppShellView: View {
                                     .foregroundStyle(.secondary)
                                     .textSelection(.enabled)
                                 ShareLink(item: lastExportURL) {
-                                    Label("Share Plain Text Export", systemImage: "square.and.arrow.up")
+                                    Label(
+                                        (viewModel.lastPublishingExportFormat ?? .plainText).shareLabel,
+                                        systemImage: "square.and.arrow.up"
+                                    )
                                 }
                                 .font(.caption)
                             }
@@ -1511,14 +1543,14 @@ public struct AppShellView: View {
         }
     }
 
-    private func exportPlainText() {
+    private func exportPublishingFormat() {
         Task {
-            await viewModel.exportPlainText()
+            await viewModel.exportPublishingFormat()
         }
     }
 
-    private func armPlainTextExport() {
-        viewModel.armPlainTextExport()
+    private func armPublishingExport() {
+        viewModel.armPublishingExport()
     }
 
     private func exportEncryptedBackup() {

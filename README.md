@@ -25,9 +25,8 @@ Repository snapshot: native iPadOS-focused Swift codebase with a verified local 
 
 ## Verified snapshot
 
-- Package tests: `swift test --enable-code-coverage` -> `101 tests in 19 suites passed`
-- Package line coverage: `63.90%`
-- Simulator build: `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build` -> `BUILD SUCCEEDED`
+- Capability scan: `scripts/scan_forbidden_capabilities.sh .` -> `passed`
+- Package tests: `swift test --enable-code-coverage` -> `103 tests in 19 suites passed`
 - Unsigned iPad archive: `xcodebuild -project YoanTranslatorApp.xcodeproj -scheme YoanTranslatorApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO archive -archivePath /tmp/YoanTranslatorApp.xcarchive` -> `ARCHIVE SUCCEEDED`
 - Bundle inspection: `PrivacyInfo.xcprivacy`, launch-screen resources, and app icon metadata confirmed inside the archive
 
@@ -51,7 +50,7 @@ Repository snapshot: native iPadOS-focused Swift codebase with a verified local 
 - Canonical text/DOCX/PDF import foundations with adversarial tests
 - Source snapshot persistence, revision-event storage, accept/reject/undo/restore foundations, and glossary validation
 - Encrypted backup export/restore foundation with archive consistency and rollback checks
-- Plaintext publishing-export staging with scoped confirmation enforcement and cleanup support
+- Local publishing export foundations for plain text, DOCX, and PDF with scoped confirmation enforcement and cleanup support
 - SwiftUI app shell in `ManuscriptAppShell` with privacy-overlay, containment-policy, and import/export/backup wiring
 - Repo and CI scan for forbidden cloud/analytics/network markers, entitlements, and obvious secret tokens
 - Apple on-device Translation and Foundation Models proofreading execution paths with local bundled fallback wiring
@@ -66,7 +65,7 @@ Repository snapshot: native iPadOS-focused Swift codebase with a verified local 
 - Full DOCX formatting fidelity on real manuscripts
 - Safe PDF import and page-preserving extraction/translation review on real samples
 - Publication-quality proofreading and translation accuracy validation on target devices
-- Explicit local publishing export policy for user-approved `DOCX`/`PDF` output on device
+- Physical-device Files handoff behavior for user-approved `TXT`/`DOCX`/`PDF` exports
 - Production signer rotation/revocation policy and legal review for third-party model weights
 
 ## Documentation map
