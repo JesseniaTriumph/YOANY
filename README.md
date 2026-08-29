@@ -2,6 +2,14 @@
 
 This repository contains the authoritative product/security documentation package plus an actively building native Swift implementation for the private on-device iPad manuscript workflow.
 
+## Repo Status
+
+- Canonical / Variant / Archive / Reference: Canonical project repo
+- Origin: Independently developed native Apple-platform product focused on privacy-preserving manuscript translation and editing
+- Your role: Primary architect and builder
+- What is unique here: Strongest native Swift, local-first privacy, and release-evidence discipline in the portfolio
+- What supersedes it, if anything: Nothing indicated
+
 Repository snapshot: native iPadOS-focused Swift codebase with a verified local test/build baseline, unsigned archive packaging evidence, and explicit release blockers still tracked in-repo.
 
 - Shared Swift modules for secure vault, document import, revision handling, export, backup/restore, and local AI runtime boundaries
